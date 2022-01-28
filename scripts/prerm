@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "pre rm"
+pkill -9 audio_ime

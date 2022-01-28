@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Utilities;
+Comment=IBus Fun Engine Setup
+Exec=/usr/bin/fun-setup %u
+GenericName=IBus Fun Engine Setup
+Icon=ibus-fun
+Keywords=ibus-fun;
+Name=中文语音输入法
+Type=Application
+X-Deepin-Vendor=user-custom

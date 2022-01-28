@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-01-28 18:11+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/Engine.cpp:357
+msgid "label_input_mode"
+msgstr "输入模式"
+
+#: src/Engine.cpp:367
+msgid "label_pinyin"
+msgstr "使用拼音词库"
+
+#: src/Engine.cpp:379
+msgid "preference"
+msgstr "首选项"
+
+#: src/Engine.cpp:391
+msgid "label_wubi_table_no"
+msgstr "不使用五笔词库"
+
+#: src/Engine.cpp:401
+msgid "label_wubi_table_86"
+msgstr "使用五笔86词库"
+
+#: src/Engine.cpp:411
+msgid "label_wubi_table_98"
+msgstr "使用五笔98词库"
+
+#: src/Engine.cpp:425
+msgid "wubi"
+msgstr "五笔词库"
+
+#: src/Engine.cpp:437
+msgid "label_orientation_system"
+msgstr "跟随系统"
+
+#: src/Engine.cpp:439
+msgid "tooltip_orientation_system"
+msgstr "跟随系统"
+
+#: src/Engine.cpp:447
+msgid "label_orientation_horizontal"
+msgstr "横排"
+
+#: src/Engine.cpp:449
+msgid "tooltip_orientation_horizontal"
+msgstr "横排"
+
+#: src/Engine.cpp:457
+msgid "label_orientation_vertical"
+msgstr "竖排"
+
+#: src/Engine.cpp:459
+msgid "tooltip_orientation_vertical"
+msgstr "竖排"
+
+#: src/Engine.cpp:470
+msgid "label_orientation"
+msgstr "候选词排列方向"
+
+#: src/Engine.cpp:472
+msgid "tooltip_orientation"
+msgstr "候选词排列方向"

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component>
+    <name>org.freedesktop.IBus.Fun</name>
+    <description>Fun Input method</description>
+    <exec>@CMAKE_INSTALL_FULL_LIBEXECDIR@/ibus/ibus-fun --ibus</exec>
+    <version>1.0</version>
+    <author>zhangfuwen</author>
+    <license>MIT</license>
+    <homepage>http://xjbcode.fun</homepage>
+    <textdomain>ibus-fun</textdomain>
+
+    <engines>
+        <engine>
+            <name>FunEngine</name>
+            <language>zh</language>
+            <license>MIT</license>
+            <author>zhangfuwen</author>
+            <icon>@CMAKE_INSTALL_FULL_DATADIR@/ibus-fun/ibus-fun.png</icon>
+            <layout>us</layout>
+            <longname>Fun Input method</longname>
+            <description>Fun Input method</description>
+            <rank>0</rank>
+            <setup>fun-setup</setup>
+            <symbol>Fun</symbol>
+            <icon_prop_key>InputMode</icon_prop_key>
+        </engine>
+    </engines>
+</component>
