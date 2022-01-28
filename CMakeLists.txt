@@ -8,12 +8,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 
 include(ExternalProject)
 ExternalProject_Add(nlsCppSdk
-        GIT_REPOSITORY     https://github.com/aliyun/alibabacloud-nls-cpp-sdk
-        GIT_TAG           master
+        GIT_REPOSITORY     https://github.com/zhangfuwen/alibabacloud-nls-cpp-sdk
+        GIT_TAG           funim
         SOURCE_DIR        "${CMAKE_BINARY_DIR}/nlsCppSdk/src"
         BINARY_DIR        "${CMAKE_BINARY_DIR}/nlsCppSdk/build"
-        CONFIGURE_COMMAND "cd ${CMAKE_BINARY_DIR}/nlsCppSdk/build; cmake ../src;"
-        BUILD_COMMAND     "cd ${CMAKE_BINARY_DIR}/nlsCppSdk/build; cmake ../src; make"
+        CONFIGURE_COMMAND "ls"
+        BUILD_COMMAND     "${CMAKE_BINARY_DIR}/nlsCppSdk/src/scripts/build_linux.sh"
         INSTALL_COMMAND   ""
         TEST_COMMAND      ""
         )
@@ -26,8 +26,8 @@ MESSAGE("PROFECT_SOURCE_DIR " ${PROJECT_SOURCE_DIR})
 MESSAGE("CMAKE_SOURCE_DIR " ${CMAKE_SOURCE_DIR})
 MESSAGE("CMAKE_BUILD_TYPE " ${CMAKE_BUILD_TYPE})
 
-include_directories(${CMAKE_SOURCE_DIR}/../../build/install/NlsSdk3.X_LINUX/include)
-link_directories(${CMAKE_SOURCE_DIR}/../../build/install/NlsSdk3.X_LINUX/lib)
+include_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/include)
+link_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/lib)
 
 
 add_executable(pulse_record examples/pulse_record.cpp)
@@ -88,7 +88,7 @@ add_library(pinyin STATIC
 
 add_executable(wubitest examples/wubitest.cpp)
 add_executable(pinyintest examples/pinyintest.cpp)
-target_link_libraries(pinyintest pinyin ${GLib2_LIBRARIES})
+target_link_libraries(pinyintest pinyin ${GLib2_LIBRARIES} pthread)
 
 add_executable(ibus-fun
         src/Engine.cpp
@@ -119,6 +119,7 @@ target_compile_definitions(ibus-fun PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
 pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
 add_executable(fun-setup src/ibus_fun_setup.cpp)
 target_include_directories(fun-setup PRIVATE ${GTKMM3_INCLUDE_DIRS})
+set_property(TARGET fun-setup PROPERTY CXX_STANDARD 20)
 message("gtkmm ${GTKMM3_INCLUDE_DIRS}")
 target_link_libraries(fun-setup ${GTKMM3_LIBRARIES}
         ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
