@@ -94,6 +94,7 @@ private:
     void WubiPinyinQuery();
     void PropertiesInit();
     void SwitchWubi();
+    bool handlePunctuation(guint keyval) const;
 
 public:
     explicit Engine(IBusEngine * engine);
