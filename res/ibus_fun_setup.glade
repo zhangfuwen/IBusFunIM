@@ -214,81 +214,25 @@
                         <property name="column-spacing">8</property>
                         <property name="row-homogeneous">True</property>
                         <child>
-                          <object class="GtkEntry">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="text" translatable="yes">rq</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkButton" id="check_result_button">
-                            <property name="label" translatable="yes">查看结果</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">2</property>
-                            <property name="top-attach">0</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkEntry">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="text" translatable="yes">date +"%Y-%m-%d %H:%M:%S"</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkEntry">
-                            <property name="height-request">30</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkEntry">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkButton" id="check_result_butto">
-                            <property name="label" translatable="yes">查看结果</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">2</property>
-                            <property name="top-attach">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkEntry">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">4</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>

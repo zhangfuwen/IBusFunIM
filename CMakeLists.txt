@@ -18,6 +18,17 @@ ExternalProject_Add(nlsCppSdk
         TEST_COMMAND      ""
         )
 
+ExternalProject_Add(configor
+        GIT_REPOSITORY     "https://github.com/Nomango/configor"
+        GIT_TAG "v0.9.15"
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/configor/src"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/configor/build"
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        TEST_COMMAND ""
+        )
+
 
 MESSAGE("c flag is ${CMAKE_C_FLAGS}")
 MESSAGE("os is ${CMAKE_SYSTEM}")
@@ -118,7 +129,8 @@ target_compile_definitions(ibus-fun PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
 
 pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
 add_executable(fun-setup src/ibus_fun_setup.cpp)
-target_include_directories(fun-setup PRIVATE ${GTKMM3_INCLUDE_DIRS})
+add_dependencies(fun-setup configor)
+target_include_directories(fun-setup PRIVATE ${GTKMM3_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/configor/src/include)
 set_property(TARGET fun-setup PROPERTY CXX_STANDARD 17)
 message("gtkmm ${GTKMM3_INCLUDE_DIRS}")
 target_link_libraries(fun-setup ${GTKMM3_LIBRARIES}

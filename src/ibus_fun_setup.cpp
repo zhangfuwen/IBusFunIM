@@ -8,8 +8,11 @@
 #include "common.h"
 #include "common_log.h"
 
+#include "configor/json.hpp"
+
 #include <array>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -37,66 +40,138 @@ int grid_get_num_rows(Gtk::Grid *grid) {
     return 0;
 }
 
-void updateGridButtons(Gtk::Grid *grid, int num_rows);
-int num_rows;
-void setup_fast_input(Glib::RefPtr<Gtk::Builder> builder) {
-    Gtk::Button *save_button;
-    builder->get_widget<Gtk::Button>("fast_input_save_button", save_button);
-    save_button->signal_clicked().connect([&]() { FUN_INFO("button_clicked"); });
 
+void save_fast_input_config(Gtk::Grid *grid) {
+    auto user_dir = get_ibus_fun_user_data_dir();
+    if(!std::filesystem::is_directory(user_dir) && !std::filesystem::create_directory(user_dir)) {
+        FUN_ERROR("directory \"%s\" does not exist and create failed", user_dir.c_str());
+        return;
+    }
+
+    auto file_path = user_dir + "fast_input.json";
+    if(std::filesystem::exists(file_path) && !std::filesystem::remove(file_path)) {
+        FUN_ERROR("file \"%s\" does exist and remove failed", file_path.c_str());
+        return;
+    }
+
+    std::ofstream ofs(file_path);
+
+    configor::json j;
+    for (int i = 0; i < 1000; i++) {
+        if (grid->get_child_at(0, i) == nullptr) {
+            FUN_ERROR("child \"%d\" does not exist", i);
+            break;
+        }
+        auto keyEntry = (Gtk::Entry *)grid->get_child_at(0, i);
+        auto cmdEntry = (Gtk::Entry *)grid->get_child_at(1, i);
+        auto keyString = keyEntry ? keyEntry->get_text() : "";
+        auto cmdString = cmdEntry ? cmdEntry->get_text() : "";
+        if (keyString.empty() || cmdString.empty()) {
+            FUN_ERROR("key or cmd is empty");
+            continue;
+        }
+        if (keyString.find_first_not_of("abcdefghijklmnopqrstuvwxyz") != std::string::npos) {
+            FUN_ERROR("key is invalid %s", keyString.c_str());
+            continue;
+        }
+        j[keyString] = cmdString;
+        FUN_INFO("save key to %s", keyString.c_str());
+        FUN_INFO("save cmd to %s", cmdString.c_str());
+    }
+    try {
+        FUN_INFO("writing config file %s", j.dump().c_str());
+        ofs << j << std::endl;
+        ofs.flush();
+    } catch (std::exception &e) {
+        FUN_ERROR("file write error, %s", e.what());
+    }
+}
+std::map<std::string, std::string> load_fast_input_config(Gtk::Grid *grid) {
+    std::map<std::string, std::string> m;
+
+    auto user_dir = get_ibus_fun_user_data_dir();
+    auto file_path = user_dir + "fast_input.json";
+    if(!std::filesystem::is_regular_file(file_path)) {
+        return m;
+    }
+
+    std::ifstream ifs(file_path);
+    configor::json j;
+    try {
+        ifs >> j;
+    } catch(std::exception &e) {
+        FUN_ERROR("failed to read configuration file, %s", e.what());
+    }
+
+    for (auto it = j.begin(); it != j.end(); it++) {
+        m[it.key()] = it.value().as_string();
+        FUN_INFO("%s %s", it.key().c_str(), it.value().as_string().c_str());
+    }
+    return m;
+}
+
+void grid_add_row(Gtk::Grid *grid, int row_index, std::string key, std::string cmd) {
+    FUN_INFO("add row %d, %s, %s", row_index, key.c_str(), cmd.c_str());
+    auto entry = Gtk::manage(new Gtk::Entry());
+    entry->set_editable();
+    entry->set_text(key.c_str());
+    grid->attach(*entry, 0, row_index, 1, 1);
+    entry->show();
+    entry = Gtk::manage(new Gtk::Entry());
+    entry->set_editable();
+    entry->set_text(cmd.c_str());
+    grid->attach(*entry, 1, row_index, 1, 1);
+    entry->show();
+    auto button = Gtk::manage(new Gtk::Button(_("checkResult")));
+    grid->attach(*button, 2, row_index, 1, 1);
+    const int i = row_index;
+    button->signal_clicked().connect([=]() {
+      FUN_INFO("%d", i);
+      Gtk::Entry *entry1 = (Gtk::Entry *)grid->get_child_at(0, i);
+      Gtk::Entry *entry2 = (Gtk::Entry *)grid->get_child_at(1, i);
+      FUN_INFO("%s %s", entry1->get_text().c_str(), entry2->get_text().c_str());
+      auto text = entry2->get_text();
+      std::string s = text;
+      FUN_INFO("text %s", s.c_str());
+      GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT;
+      auto dialog = gtk_message_dialog_new(
+          nullptr, flags, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, "%s", exec(s.c_str()).c_str());
+      gtk_dialog_run(GTK_DIALOG(dialog));
+      gtk_widget_destroy(dialog);
+    });
+    button->show();
+}
+
+void setup_fast_input(Glib::RefPtr<Gtk::Builder> builder) {
     Gtk::Grid *grid = nullptr;
     builder->get_widget<Gtk::Grid>("fast_input_grid", grid);
-    FUN_INFO("button_clicked %p", grid);
-    FUN_INFO("%d %d", grid->get_allocated_width(), grid->get_height());
-    num_rows = grid_get_num_rows(grid);
 
+    // refresh contents
+    auto m = load_fast_input_config(grid);
+    FUN_INFO("loaded configuration file, %d items", m.size());
+    auto num_rows = grid_get_num_rows(grid);
+    for(const auto & [key, cmd] : m) {
+        grid_add_row(grid, num_rows, key, cmd);
+        num_rows++;
+    }
+
+    // save content button
+    Gtk::Button *save_button;
+    builder->get_widget<Gtk::Button>("fast_input_save_button", save_button);
+    save_button->signal_clicked().connect([=]() {
+        FUN_INFO("save button_clicked");
+        save_fast_input_config(grid);
+    });
+
+    // new button
     Gtk::Button *new_button;
     builder->get_widget<Gtk::Button>("fast_input_new_button", new_button);
     new_button->signal_clicked().connect([=]() {
         FUN_INFO("button_clicked");
-        FUN_INFO("button_clicked %p", grid);
-        Gtk::Grid *grid = nullptr;
-        builder->get_widget<Gtk::Grid>("fast_input_grid", grid);
-        FUN_INFO("button_clicked %p", grid);
-        FUN_INFO("%d %d", grid->get_width(), grid->get_height());
-        FUN_INFO("num rows %d", num_rows);
-        //        grid->insert_row(num_rows+1);
-        //      Gtk::Entry *entry1 = (Gtk::Entry *)grid->get_child_at(0, 0);
-        //      Gtk::Entry *entry2 = (Gtk::Entry *)grid->get_child_at(1, 0);
-//        Gtk::Label *label = Gtk::manage(new Gtk::Label("File Name :"));
-        auto entry = Gtk::manage(new Gtk::Entry());
-//        entry->set_text("hello");
-        grid->attach(*entry, 0, num_rows++, 1, 1);
-      entry->show();
-//      grid->add(*label);
-//      auto entry = Gtk::manage(new Gtk::Entry());
-//      entry->set_text("hello");
-//      grid->attach(*entry, 0, 0, 3, 3);
-//        grid->insert_row(0);
-//      grid->attach(*entry, 1, num_rows);
-//      grid->attach(*entry, 2, num_rows);
-      //      grid->attach((Gtk::Entry*) entry2->gobj_copy(), num_rows, 1);
+        auto num_rows = grid_get_num_rows(grid);
+        grid_add_row(grid, num_rows, "", "");
     });
 
-    updateGridButtons(grid, num_rows);
-}
-void updateGridButtons(Gtk::Grid *grid, int num_rows) {
-    for (int i = 0; i < num_rows; i++) {
-        Gtk::Button *check_result_button = (Gtk::Button *)grid->get_child_at(2, i);
-        check_result_button->signal_clicked().connect([=]() {
-            Gtk::Entry *entry1 = (Gtk::Entry *)grid->get_child_at(0, i);
-            Gtk::Entry *entry2 = (Gtk::Entry *)grid->get_child_at(1, i);
-            FUN_INFO("%s %s", entry1->get_text().c_str(), entry2->get_text().c_str());
-            auto text = entry2->get_text();
-            std::string s = text;
-            FUN_INFO("text %s", s.c_str());
-            GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT;
-            auto dialog = gtk_message_dialog_new(
-                nullptr, flags, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, "%s", exec(s.c_str()).c_str());
-            gtk_dialog_run(GTK_DIALOG(dialog));
-            gtk_widget_destroy(dialog);
-        });
-    }
 }
 
 Glib::RefPtr<Gtk::Application> app;

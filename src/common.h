@@ -24,11 +24,10 @@ struct CandidateAttr {
 
 #define GETTEXT_PACKAGE "messages"
 
-static const char* get_ibus_fun_user_data_dir(char *path) {
-    const char* home = getenv("HOME");
-    strcpy(path, home);
-    strcat(path, "/.config/ibus/fun");
-    return path;
+static inline std::string get_ibus_fun_user_data_dir() {
+    std::string ret = getenv("HOME");
+    ret += "/.config/ibus/fun/";
+    return ret;
 }
 
 #endif // AUDIO_IME_COMMON_H
