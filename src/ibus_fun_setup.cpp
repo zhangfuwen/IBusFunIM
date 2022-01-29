@@ -8,9 +8,103 @@
 #include "common.h"
 #include "common_log.h"
 
+#include <array>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+
+std::string exec(const char *cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+int grid_get_num_rows(Gtk::Grid *grid) {
+    for (int i = 0; i < 1000; i++) {
+        if (grid->get_child_at(0, i) == nullptr) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+void updateGridButtons(Gtk::Grid *grid, int num_rows);
+int num_rows;
+void setup_fast_input(Glib::RefPtr<Gtk::Builder> builder) {
+    Gtk::Button *save_button;
+    builder->get_widget<Gtk::Button>("fast_input_save_button", save_button);
+    save_button->signal_clicked().connect([&]() { FUN_INFO("button_clicked"); });
+
+    Gtk::Grid *grid = nullptr;
+    builder->get_widget<Gtk::Grid>("fast_input_grid", grid);
+    FUN_INFO("button_clicked %p", grid);
+    FUN_INFO("%d %d", grid->get_allocated_width(), grid->get_height());
+    num_rows = grid_get_num_rows(grid);
+
+    Gtk::Button *new_button;
+    builder->get_widget<Gtk::Button>("fast_input_new_button", new_button);
+    new_button->signal_clicked().connect([=]() {
+        FUN_INFO("button_clicked");
+        FUN_INFO("button_clicked %p", grid);
+        Gtk::Grid *grid = nullptr;
+        builder->get_widget<Gtk::Grid>("fast_input_grid", grid);
+        FUN_INFO("button_clicked %p", grid);
+        FUN_INFO("%d %d", grid->get_width(), grid->get_height());
+        FUN_INFO("num rows %d", num_rows);
+        //        grid->insert_row(num_rows+1);
+        //      Gtk::Entry *entry1 = (Gtk::Entry *)grid->get_child_at(0, 0);
+        //      Gtk::Entry *entry2 = (Gtk::Entry *)grid->get_child_at(1, 0);
+//        Gtk::Label *label = Gtk::manage(new Gtk::Label("File Name :"));
+        auto entry = Gtk::manage(new Gtk::Entry());
+//        entry->set_text("hello");
+        grid->attach(*entry, 0, num_rows++, 1, 1);
+      entry->show();
+//      grid->add(*label);
+//      auto entry = Gtk::manage(new Gtk::Entry());
+//      entry->set_text("hello");
+//      grid->attach(*entry, 0, 0, 3, 3);
+//        grid->insert_row(0);
+//      grid->attach(*entry, 1, num_rows);
+//      grid->attach(*entry, 2, num_rows);
+      //      grid->attach((Gtk::Entry*) entry2->gobj_copy(), num_rows, 1);
+    });
+
+    updateGridButtons(grid, num_rows);
+}
+void updateGridButtons(Gtk::Grid *grid, int num_rows) {
+    for (int i = 0; i < num_rows; i++) {
+        Gtk::Button *check_result_button = (Gtk::Button *)grid->get_child_at(2, i);
+        check_result_button->signal_clicked().connect([=]() {
+            Gtk::Entry *entry1 = (Gtk::Entry *)grid->get_child_at(0, i);
+            Gtk::Entry *entry2 = (Gtk::Entry *)grid->get_child_at(1, i);
+            FUN_INFO("%s %s", entry1->get_text().c_str(), entry2->get_text().c_str());
+            auto text = entry2->get_text();
+            std::string s = text;
+            FUN_INFO("text %s", s.c_str());
+            GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT;
+            auto dialog = gtk_message_dialog_new(
+                nullptr, flags, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, "%s", exec(s.c_str()).c_str());
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        });
+    }
+}
+
+Glib::RefPtr<Gtk::Application> app;
+Glib::RefPtr<Gtk::Builder> builder;
+
 int main(int argc, char *argv[]) {
-    auto app = Gtk::Application::create("fun.xjbcode.ibus-fun.setup");
-    auto builder = Gtk::Builder::create_from_file("/usr/share/ibus/ibus-fun/data/ibus_fun_setup.glade");
+    app = Gtk::Application::create("fun.xjbcode.ibus-fun.setup");
+    builder = Gtk::Builder::create_from_file("/usr/share/ibus/ibus-fun/data/ibus_fun_setup.glade");
 
     Gtk::Window *win;
     builder->get_widget<Gtk::Window>("win1", win);
@@ -26,6 +120,9 @@ int main(int argc, char *argv[]) {
     builder->get_widget<Gtk::Button>("but_set_config", but_set_config);
     Gtk::Label *page2;
     builder->get_widget<Gtk::Label>("page2", page2);
+
+    setup_fast_input(builder);
+
     IBusBus *g_bus;
     IBusConfig *config;
 
