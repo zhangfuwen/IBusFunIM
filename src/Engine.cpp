@@ -138,9 +138,11 @@ gboolean Engine::ProcessKeyEvent(guint keyval, guint keycode, guint state) {
       return true;
     }
 
-    auto ret = LookupTableNavigate(keyval);
-    if (ret) {
-      return true;
+    if(!m_input.empty()) {
+      auto ret = LookupTableNavigate(keyval);
+      if (ret) {
+        return true;
+      }
     }
 
     // punctuation handlring

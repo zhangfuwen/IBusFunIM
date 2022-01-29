@@ -119,7 +119,7 @@ target_compile_definitions(ibus-fun PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
 pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
 add_executable(fun-setup src/ibus_fun_setup.cpp)
 target_include_directories(fun-setup PRIVATE ${GTKMM3_INCLUDE_DIRS})
-set_property(TARGET fun-setup PROPERTY CXX_STANDARD 20)
+set_property(TARGET fun-setup PROPERTY CXX_STANDARD 17)
 message("gtkmm ${GTKMM3_INCLUDE_DIRS}")
 target_link_libraries(fun-setup ${GTKMM3_LIBRARIES}
         ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
