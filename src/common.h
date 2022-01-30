@@ -36,15 +36,23 @@ static inline std::string get_ibus_fun_user_data_dir() {
     return ret;
 }
 
-static inline std::map<std::string, std::string> load_fast_input_config() {
+static inline std::map<std::string, std::string> load_fast_input_config(const std::string& filename = "") {
     std::map<std::string, std::string> m;
+    FUN_INFO("loading file %s", filename.c_str());
 
-    auto user_dir = get_ibus_fun_user_data_dir();
-    auto file_path = user_dir + "fast_input.json";
+    std::string file_path;
+    if(filename.empty()) {
+        auto user_dir = get_ibus_fun_user_data_dir();
+        file_path = user_dir + "fast_input.json";
+    } else {
+        file_path = filename;
+    }
     if(!std::filesystem::is_regular_file(file_path)) {
+        FUN_ERROR("can't open irregular file %s", file_path.c_str());
         return m;
     }
 
+    FUN_INFO("loading file %s", file_path.c_str());
     std::ifstream ifs(file_path);
     configor::json j;
     try {
@@ -52,10 +60,11 @@ static inline std::map<std::string, std::string> load_fast_input_config() {
     } catch(std::exception &e) {
         FUN_ERROR("failed to read configuration file, %s", e.what());
     }
+    FUN_INFO("json size %d", j.size());
 
     for (auto it = j.begin(); it != j.end(); it++) {
         m[it.key()] = it.value().as_string();
-        FUN_INFO("%s %s", it.key().c_str(), it.value().as_string().c_str());
+        FUN_INFO("json read record %s %s", it.key().c_str(), it.value().as_string().c_str());
     }
     return m;
 }

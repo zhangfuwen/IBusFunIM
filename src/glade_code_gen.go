@@ -46,7 +46,7 @@ func main() {
         return
     }
     if !*quiet {
-        fmt.Println("filename " + *fileName)
+        fmt.Println("trim_filename " + *fileName)
     }
     file, err := os.Open(*fileName)
     if err!= nil {
