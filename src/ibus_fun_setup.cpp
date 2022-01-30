@@ -18,18 +18,7 @@
 #include <stdexcept>
 #include <string>
 
-std::string exec(const char *cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
+
 
 int grid_get_num_rows(Gtk::Grid *grid) {
     for (int i = 0; i < 1000; i++) {
@@ -86,29 +75,6 @@ void save_fast_input_config(Gtk::Grid *grid) {
         FUN_ERROR("file write error, %s", e.what());
     }
 }
-std::map<std::string, std::string> load_fast_input_config(Gtk::Grid *grid) {
-    std::map<std::string, std::string> m;
-
-    auto user_dir = get_ibus_fun_user_data_dir();
-    auto file_path = user_dir + "fast_input.json";
-    if(!std::filesystem::is_regular_file(file_path)) {
-        return m;
-    }
-
-    std::ifstream ifs(file_path);
-    configor::json j;
-    try {
-        ifs >> j;
-    } catch(std::exception &e) {
-        FUN_ERROR("failed to read configuration file, %s", e.what());
-    }
-
-    for (auto it = j.begin(); it != j.end(); it++) {
-        m[it.key()] = it.value().as_string();
-        FUN_INFO("%s %s", it.key().c_str(), it.value().as_string().c_str());
-    }
-    return m;
-}
 
 void grid_add_row(Gtk::Grid *grid, int row_index, std::string key, std::string cmd) {
     FUN_INFO("add row %d, %s, %s", row_index, key.c_str(), cmd.c_str());
@@ -147,7 +113,7 @@ void setup_fast_input(Glib::RefPtr<Gtk::Builder> builder) {
     builder->get_widget<Gtk::Grid>("fast_input_grid", grid);
 
     // refresh contents
-    auto m = load_fast_input_config(grid);
+    auto m = load_fast_input_config();
     FUN_INFO("loaded configuration file, %d items", m.size());
     auto num_rows = grid_get_num_rows(grid);
     for(const auto & [key, cmd] : m) {

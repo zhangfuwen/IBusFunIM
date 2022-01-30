@@ -37,6 +37,8 @@
 #include <utility>
 #include <vector>
 
+#include "DictFast.h"
+
 struct Candidate {
     bool isPinyin;
     IBusText * text;
@@ -57,6 +59,11 @@ public:
     void PageDown();
     void CursorDown();
     void CursorUp();
+    void AppendLabel(IBusText * text);
+    void AppendLabel(std::string s);
+    guint Size() {
+        return ibus_lookup_table_get_number_of_candidates(m_table);
+    }
     Candidate GetCandidateGlobal(guint globalCursor);
     guint GetGlobalCursor(int index);
     void setOrientation(IBusOrientation orientation) {
@@ -75,6 +82,7 @@ private:
     Wubi *m_wubi = nullptr;
     pinyin::DictPinyin *m_pinyin = nullptr;
     DictSpeech *m_speechRecognizer = nullptr;
+    DictFast * m_dictFast = nullptr;
     std::string m_input;
 
     LookupTable *m_lookupTable = nullptr;
@@ -91,7 +99,7 @@ private:
     void UpdateInputMode();
     bool LookupTableNavigate(guint keyval);
     void Clear();
-    void WubiPinyinQuery();
+    void WubiPinyinQuery(std::string input);
     void PropertiesInit();
     void SwitchWubi();
     bool handlePunctuation(guint keyval) const;

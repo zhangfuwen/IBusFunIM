@@ -21,11 +21,13 @@
 #include "Engine.h"
 #include "common.h"
 #include "common_log.h"
+#include "DictFast.h"
 
 using namespace std::placeholders;
 
 Wubi *g_wubi = nullptr;
 pinyin::DictPinyin *g_pinyin = nullptr;
+DictFast *g_dictFast = nullptr;
 
 Engine::Engine(IBusEngine *engine) {
   FUN_INFO("constructor");
@@ -41,6 +43,11 @@ Engine::Engine(IBusEngine *engine) {
     g_pinyin = new pinyin::DictPinyin();
   }
   m_pinyin = g_pinyin;
+
+  if(!g_dictFast) {
+      g_dictFast = new DictFast();
+  }
+  m_dictFast = g_dictFast;
 
   m_speechRecognizer = new DictSpeech(this, m_options);
   m_lookupTable = new LookupTable(engine, m_options->lookupTableOrientation);
@@ -174,7 +181,15 @@ gboolean Engine::ProcessKeyEvent(guint keyval, guint keycode, guint state) {
         m_engine, ibus_text_new_from_string(m_input.c_str()), true);
 
     m_lookupTable->Clear();
-    WubiPinyinQuery();
+    auto out = m_dictFast->Query(m_input);
+    if(!out.empty()) {
+        FUN_DEBUG("dictFast query %s:%s", m_input.c_str(), out.c_str());
+        m_lookupTable->Append(ibus_text_new_from_string(out.c_str()), false);
+    }
+    WubiPinyinQuery(m_input);
+    if(!out.empty() && m_lookupTable->Size() > 1) {
+        m_lookupTable->CursorDown();
+    }
     m_lookupTable->Update();
     m_lookupTable->Show();
 
@@ -222,17 +237,17 @@ bool Engine::handlePunctuation(guint keyval) const {
   }
   return isPunctuationHandled;
 }
-void Engine::WubiPinyinQuery() { // get pinyin candidates
+void Engine::WubiPinyinQuery(std::string input) { // get pinyin candidates
   unsigned int nPinyinCandidates = 0;
   if (m_options->pinyin) {
-    nPinyinCandidates = m_pinyin->Search(m_input);
+    nPinyinCandidates = m_pinyin->Search(input);
   }
-  FUN_DEBUG("num candidates %u for %s", nPinyinCandidates, m_input.c_str());
+  FUN_DEBUG("num candidates %u for %s", nPinyinCandidates, input.c_str());
 
   // get wubi candidates
   TrieNode *wubiSubtree = nullptr;
   if (!m_options->wubi_table.empty() && m_wubi) { // no searching , no data
-    wubiSubtree = m_wubi->Search(m_input);
+    wubiSubtree = m_wubi->Search(input);
   }
   map<uint64_t, string> m;
   if (wubiSubtree != nullptr && wubiSubtree->isEndOfWord) {
@@ -616,6 +631,12 @@ LookupTable::~LookupTable() {
 void LookupTable::Append(IBusText *text, bool pinyin) {
   ibus_lookup_table_append_candidate(m_table, text);
   m_candidateAttrs.emplace_back(pinyin);
+}
+void LookupTable::AppendLabel(std::string s) {
+    AppendLabel(ibus_text_new_from_string(s.c_str()));
+}
+void LookupTable::AppendLabel(IBusText * text) {
+    ibus_lookup_table_append_label(m_table, text);
 }
 void LookupTable::Show() { ibus_engine_show_lookup_table(m_engine); }
 void LookupTable::Hide() { ibus_engine_hide_lookup_table(m_engine); }

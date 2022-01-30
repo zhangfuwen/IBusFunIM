@@ -8,18 +8,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 
 include(ExternalProject)
 ExternalProject_Add(nlsCppSdk
-        GIT_REPOSITORY     https://github.com/zhangfuwen/alibabacloud-nls-cpp-sdk
-        GIT_TAG           funim
-        SOURCE_DIR        "${CMAKE_BINARY_DIR}/nlsCppSdk/src"
-        BINARY_DIR        "${CMAKE_BINARY_DIR}/nlsCppSdk/build"
+        GIT_REPOSITORY https://github.com/zhangfuwen/alibabacloud-nls-cpp-sdk
+        GIT_TAG funim
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/nlsCppSdk/src"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/nlsCppSdk/build"
         CONFIGURE_COMMAND "ls"
-        BUILD_COMMAND     "${CMAKE_BINARY_DIR}/nlsCppSdk/src/scripts/build_linux.sh"
-        INSTALL_COMMAND   ""
-        TEST_COMMAND      ""
+        BUILD_COMMAND "${CMAKE_BINARY_DIR}/nlsCppSdk/src/scripts/build_linux.sh"
+        INSTALL_COMMAND ""
+        TEST_COMMAND ""
         )
 
 ExternalProject_Add(configor
-        GIT_REPOSITORY     "https://github.com/Nomango/configor"
+        GIT_REPOSITORY "https://github.com/Nomango/configor"
         GIT_TAG "v0.9.15"
         SOURCE_DIR "${CMAKE_BINARY_DIR}/configor/src"
         BINARY_DIR "${CMAKE_BINARY_DIR}/configor/build"
@@ -61,21 +61,21 @@ message("CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR}")
 
 find_package(PkgConfig)
 pkg_check_modules(IBus REQUIRED ibus-1.0)
-if(IBus_FOUND)
+if (IBus_FOUND)
     include_directories(${IBus_INCLUDE_DIRS})
     message("IBus_INCLUDE_DIRS ${IBus_INCLUDE_DIRS}")
     link_directories(${IBus_LIBRARY_DIRS})
-endif(IBus_FOUND)
+endif (IBus_FOUND)
 
 pkg_check_modules(GLib2 REQUIRED glib-2.0)
 
-if(GLib2_FOUND)
+if (GLib2_FOUND)
     include_directories(${GLib2_INCLUDE_DIRS})
     link_directories(${GLib2_LIBRARY_DIRS})
     message("GLib2_INCLUDE_DIRS ${GLib2_INCLUDE_DIRS}")
-else()
+else ()
     message("glib2 not found")
-endif(GLib2_FOUND)
+endif (GLib2_FOUND)
 
 include_directories(pinyin/include)
 add_library(pinyin STATIC
@@ -108,15 +108,19 @@ add_executable(ibus-fun
         src/ibus_fun_engine.cpp
         src/DictPinyin.cpp
         src/DictWubi.cpp
+        src/DictSpeech.cpp
+        src/DictFast.cpp
         src/ibus_fun_main.cpp
-        src/DictSpeech.cpp)
+        )
 target_link_libraries(ibus-fun
-    alibabacloud-idst-speech.a
-    pthread z dl psl brotlidec pulse pulse-simple
-    ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
+        alibabacloud-idst-speech.a
+        pthread z dl psl brotlidec pulse pulse-simple
+        ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
         pinyin)
 set_property(TARGET ibus-fun PROPERTY CXX_STANDARD 20)
 add_dependencies(ibus-fun nlsCppSdk)
+add_dependencies(ibus-fun configor)
+target_include_directories(ibus-fun PRIVATE ${GTKMM3_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/configor/src/include)
 
 message("IBus_LIBRARIES ${IBus_LIBRARIES}")
 message("IBus_VERSION ${IBus_VERSION}")
@@ -124,17 +128,22 @@ message("IBus_INCLUDE_DIRS ${IBus_INCLUDE_DIRS}")
 string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
 if (build_type STREQUAL release)
     target_compile_definitions(ibus-fun PRIVATE NBUILD)
-endif()
+endif ()
 target_compile_definitions(ibus-fun PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
 
 pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
 add_executable(fun-setup src/ibus_fun_setup.cpp)
 add_dependencies(fun-setup configor)
-target_include_directories(fun-setup PRIVATE ${GTKMM3_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/configor/src/include)
+target_include_directories(fun-setup
+        PRIVATE
+        ${GTKMM3_INCLUDE_DIRS}
+        ${CMAKE_BINARY_DIR}/configor/src/include)
 set_property(TARGET fun-setup PROPERTY CXX_STANDARD 17)
 message("gtkmm ${GTKMM3_INCLUDE_DIRS}")
-target_link_libraries(fun-setup ${GTKMM3_LIBRARIES}
-        ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
+target_link_libraries(fun-setup
+        ${GTKMM3_LIBRARIES}
+        ${IBus_LIBRARIES}
+        ${GLib2_LIBRARIES}
         )
 
 configure_file(res/ibus-fun.xml.in ${CMAKE_CURRENT_BINARY_DIR}/ibus-fun.xml @ONLY)
@@ -150,10 +159,10 @@ INSTALL(FILES res/ibus-fun.desktop DESTINATION share/applications PERMISSIONS OW
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/ibus-fun.xml DESTINATION /usr/share/ibus/component PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(TARGETS ibus-fun DESTINATION ${CMAKE_INSTALL_FULL_LIBEXECDIR}/ibus/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(TARGETS fun-setup DESTINATION /usr/bin/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
-INSTALL(FILES res/ibus_fun_setup.glade DESTINATION /usr/share/ibus/ibus-fun/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ )
-INSTALL(FILES res/dict_pinyin.dat DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ )
-INSTALL(FILES res/wubi86.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ )
-INSTALL(FILES res/wubi98.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ )
+INSTALL(FILES res/ibus_fun_setup.glade DESTINATION /usr/share/ibus/ibus-fun/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
+INSTALL(FILES res/dict_pinyin.dat DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
+INSTALL(FILES res/wubi86.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
+INSTALL(FILES res/wubi98.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
 INSTALL(FILES res/ibus-fun.png DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/ibus-fun/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(FILES res/ibus-fun.conf DESTINATION /etc/rsyslog.d/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(FILES language/zh_CN/LC_MESSAGES/messages.mo DESTINATION /usr/share/ibus/ibus-fun/data/language/zh_CN/LC_MESSAGES/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
