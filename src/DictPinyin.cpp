@@ -33,7 +33,7 @@
 #include "DictPinyin.h"
 volatile bool g_pinyin_table = true;
 pinyin::DictPinyin::DictPinyin() {
-    bool ret = ime_pinyin::im_open_decoder("/usr/share/ibus-table/data/dict_pinyin.dat", "/home/zhangfuwen/pinyin.dat");
+    bool ret = ime_pinyin::im_open_decoder("/usr/share/ibus-table/data/dict_pinyin.dat", (get_ibus_fun_user_data_dir() + "/pinyin.dat").c_str());
 }
 unsigned int pinyin::DictPinyin::Search(const basic_string<char> &input) {
     auto numCandidates = ime_pinyin::im_search(input.c_str(), input.size());
