@@ -29,6 +29,8 @@ public:
     bool capsOn = false;
     bool speechOn = false;
 
+    bool dictFastEnabled = true;
+
     IBusOrientation lookupTableOrientation = IBUS_ORIENTATION_SYSTEM;
 
     static RuntimeOptions *instance;

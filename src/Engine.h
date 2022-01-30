@@ -103,6 +103,7 @@ private:
     void PropertiesInit();
     void SwitchWubi();
     bool handlePunctuation(guint keyval) const;
+    void ReloadFastTable();
 
 public:
     explicit Engine(IBusEngine * engine);

@@ -325,6 +325,25 @@ void Engine::SwitchWubi() {
     g_object_unref(m_engine);
   }).detach();
 }
+
+void Engine::ReloadFastTable() {
+    FUN_INFO("Switch wubi table");
+    Clear();
+    m_dictFast = nullptr;
+    delete g_dictFast;
+    g_dictFast = nullptr;
+    std::thread([&]() {
+        g_object_ref(m_engine);
+        // keep engine not destructed
+        if (m_options->dictFastEnabled) {
+            g_dictFast = new DictFast();
+        }
+        m_dictFast = g_dictFast;
+        FUN_INFO("dictFast reloaded");
+        g_object_unref(m_engine);
+    }).detach();
+}
+
 bool Engine::LookupTableNavigate(guint keyval) {
   bool return1 = false;
   if (keyval == IBUS_KEY_equal || keyval == IBUS_KEY_Right) {
@@ -402,6 +421,23 @@ void Engine::UpdateInputMode() {
   }
   ibus_engine_update_property(m_engine, prop);
   FUN_TRACE("Exit");
+}
+
+IBusProperty * NewProperty(std::string name, IBusPropType type, IBusPropState state) {
+    const std::string iconBase = "/usr/share/icons/hicolor/scalable/apps/";
+#define ICON(name) (iconBase + name).c_str()
+    auto prop = ibus_property_new(
+        name.c_str(),
+        type,
+        ibus_text_new_from_string(_(("label_"s + name).c_str())),
+        ICON(name + ".png"),
+        ibus_text_new_from_string(_(("tooltip_"s + name).c_str())),
+        true,
+        true,
+        state,
+        nullptr);
+    return prop;
+#undef ICON
 }
 void Engine::PropertiesInit() {
   std::string iconBase = "/usr/share/icons/hicolor/scalable/apps/";
@@ -536,6 +572,11 @@ void Engine::OnPropertyActivate(IBusEngine *engine, const gchar *name,
           CONF_NAME_ORIENTATION,
           std::to_string(m_options->lookupTableOrientation));
     }
+  }
+
+  if(n == "dict_fast_enbale") {
+      m_options->dictFastEnabled = state == 1 ? true:false;
+      ReloadFastTable();
   }
 
   auto oldOptions = *m_options;
