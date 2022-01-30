@@ -29,7 +29,8 @@ public:
     bool capsOn = false;
     bool speechOn = false;
 
-    bool dictFastEnabled = true;
+    volatile bool dictFastEnabled = true;
+    volatile bool dictFastPendingReload = false;
 
     IBusOrientation lookupTableOrientation = IBUS_ORIENTATION_SYSTEM;
 

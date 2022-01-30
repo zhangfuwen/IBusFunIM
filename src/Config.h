@@ -41,8 +41,15 @@ public:
                 opts->lookupTableOrientation = static_cast<IBusOrientation>(ret);
             }
         }
+        auto dictFastEnable = GetString(CONF_NAME_FAST_INPUT_ENABLED);
+        if( dictFastEnable.empty() ) {
+            SetString(CONF_NAME_FAST_INPUT_ENABLED, "true");
+            dictFastEnable = "true";
+        }
+        opts->dictFastEnabled = dictFastEnable == "true";
         ibus_config_watch(m_config, CONF_SECTION, CONF_NAME_ID);
         ibus_config_watch(m_config, CONF_SECTION, CONF_NAME_SECRET);
+        ibus_config_watch(m_config, CONF_SECTION, CONF_NAME_FAST_INPUT_RELOAD);
         g_signal_connect(m_config, "value-changed", G_CALLBACK(OnValueChanged), this);
         FUN_INFO("config value-changed signal connected");
     }

@@ -25,29 +25,26 @@
 
 using namespace std::placeholders;
 
-Wubi *g_wubi = nullptr;
-pinyin::DictPinyin *g_pinyin = nullptr;
-DictFast *g_dictFast = nullptr;
+Wubi *Engine::s_wubi = nullptr;
+pinyin::DictPinyin *Engine::s_pinyin = nullptr;
+DictFast *Engine::s_dictFast = nullptr;
 
 Engine::Engine(IBusEngine *engine) {
   FUN_INFO("constructor");
   m_options = RuntimeOptions::get();
   m_engine = engine;
   // Setup Lookup table
-  if (!g_wubi) {
-    g_wubi = new Wubi(wubi86DictPath);
+  if (!s_wubi) {
+    s_wubi = new Wubi(wubi86DictPath);
   }
-  m_wubi = g_wubi;
 
-  if (!g_pinyin) {
-    g_pinyin = new pinyin::DictPinyin();
+  if (!s_pinyin) {
+    s_pinyin = new pinyin::DictPinyin();
   }
-  m_pinyin = g_pinyin;
 
-  if(!g_dictFast) {
-      g_dictFast = new DictFast();
+  if(!s_dictFast) {
+      s_dictFast = new DictFast();
   }
-  m_dictFast = g_dictFast;
 
   m_speechRecognizer = new DictSpeech(this, m_options);
   m_lookupTable = new LookupTable(engine, m_options->lookupTableOrientation);
@@ -181,10 +178,15 @@ gboolean Engine::ProcessKeyEvent(guint keyval, guint keycode, guint state) {
         m_engine, ibus_text_new_from_string(m_input.c_str()), true);
 
     m_lookupTable->Clear();
-    auto out = m_dictFast->Query(m_input);
-    if(!out.empty()) {
-        FUN_DEBUG("dictFast query %s:%s", m_input.c_str(), out.c_str());
-        m_lookupTable->Append(ibus_text_new_from_string(out.c_str()), false);
+    FUN_INFO("dictFast enable %p, enabled:%d", s_dictFast, m_options->dictFastEnabled);
+    std::string out;
+    if(m_options->dictFastEnabled && s_dictFast) {
+        out = s_dictFast->Query(m_input);
+        FUN_DEBUG("dictFast query %s:%s", m_input.c_str(), out.empty()? "none":out.c_str());
+        if(!out.empty()) {
+            FUN_INFO("dict query %s, %s", m_input.c_str(), out.c_str());
+            m_lookupTable->Append(ibus_text_new_from_string(out.c_str()), false);
+        }
     }
     WubiPinyinQuery(m_input);
     if(!out.empty() && m_lookupTable->Size() > 1) {
@@ -240,14 +242,14 @@ bool Engine::handlePunctuation(guint keyval) const {
 void Engine::WubiPinyinQuery(std::string input) { // get pinyin candidates
   unsigned int nPinyinCandidates = 0;
   if (m_options->pinyin) {
-    nPinyinCandidates = m_pinyin->Search(input);
+    nPinyinCandidates = s_pinyin->Search(input);
   }
   FUN_DEBUG("num candidates %u for %s", nPinyinCandidates, input.c_str());
 
   // get wubi candidates
   TrieNode *wubiSubtree = nullptr;
-  if (!m_options->wubi_table.empty() && m_wubi) { // no searching , no data
-    wubiSubtree = m_wubi->Search(input);
+  if (!m_options->wubi_table.empty() && s_wubi) { // no searching , no data
+    wubiSubtree = s_wubi->Search(input);
   }
   map<uint64_t, string> m;
   if (wubiSubtree != nullptr && wubiSubtree->isEndOfWord) {
@@ -282,7 +284,7 @@ void Engine::WubiPinyinQuery(std::string input) { // get pinyin candidates
       it++;
     }
     if (j < nPinyinCandidates) {
-      wstring buffer = m_pinyin->GetCandidate(j);
+      wstring buffer = s_pinyin->GetCandidate(j);
       glong items_read;
       glong items_written;
       GError *error;
@@ -310,16 +312,15 @@ void Engine::Clear() { // commit input as english
 void Engine::SwitchWubi() {
   FUN_INFO("Switch wubi table");
   Clear();
-  m_wubi = nullptr;
-  delete g_wubi;
-  g_wubi = nullptr;
+  auto x = s_wubi;
+  s_wubi = nullptr;
+  delete x;
   std::thread([&]() {
     g_object_ref(m_engine);
     // keep engine not destructed
     if (!m_options->wubi_table.empty()) {
-      g_wubi = new Wubi(m_options->wubi_table);
+      s_wubi = new Wubi(m_options->wubi_table);
     }
-    m_wubi = g_wubi;
     FUN_INFO("done switching wubi table to [%s]",
              m_options->wubi_table.c_str());
     g_object_unref(m_engine);
@@ -327,18 +328,17 @@ void Engine::SwitchWubi() {
 }
 
 void Engine::ReloadFastTable() {
-    FUN_INFO("Switch wubi table");
+    FUN_INFO("reload fast table");
     Clear();
-    m_dictFast = nullptr;
-    delete g_dictFast;
-    g_dictFast = nullptr;
+    auto x = s_dictFast;
+    s_dictFast = nullptr;
+    delete x;
     std::thread([&]() {
         g_object_ref(m_engine);
         // keep engine not destructed
         if (m_options->dictFastEnabled) {
-            g_dictFast = new DictFast();
+            s_dictFast = new DictFast();
         }
-        m_dictFast = g_dictFast;
         FUN_INFO("dictFast reloaded");
         g_object_unref(m_engine);
     }).detach();
@@ -380,6 +380,10 @@ void Engine::FocusIn() {
   FUN_TRACE("Entry");
   ibus_engine_register_properties(m_engine, m_props);
   UpdateInputMode();
+  if(m_options->dictFastPendingReload) {
+      ReloadFastTable();
+      m_options->dictFastPendingReload = false;
+  }
   FUN_TRACE("Exit");
 }
 void Engine::FocusOut() {
@@ -423,7 +427,7 @@ void Engine::UpdateInputMode() {
   FUN_TRACE("Exit");
 }
 
-IBusProperty * NewProperty(std::string name, IBusPropType type, IBusPropState state) {
+IBusProperty * NewProperty(std::string name, IBusPropType type, bool checked, IBusPropList * list = nullptr) {
     const std::string iconBase = "/usr/share/icons/hicolor/scalable/apps/";
 #define ICON(name) (iconBase + name).c_str()
     auto prop = ibus_property_new(
@@ -434,111 +438,52 @@ IBusProperty * NewProperty(std::string name, IBusPropType type, IBusPropState st
         ibus_text_new_from_string(_(("tooltip_"s + name).c_str())),
         true,
         true,
-        state,
-        nullptr);
+        checked? PROP_STATE_CHECKED: PROP_STATE_UNCHECKED,
+        list);
     return prop;
 #undef ICON
 }
+
 void Engine::PropertiesInit() {
-  std::string iconBase = "/usr/share/icons/hicolor/scalable/apps/";
-#define ICON(name) (iconBase + name).c_str()
-  auto prop_list = ibus_prop_list_new();
-  auto prop_input_mode = ibus_property_new(
-      "InputMode", PROP_TYPE_NORMAL,
-      ibus_text_new_from_string(_("label_input_mode")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string("tooltip_input_mode"), false, true,
-      PROP_STATE_CHECKED, nullptr);
-  auto prop_pinyin = ibus_property_new(
-      "pinyin", PROP_TYPE_TOGGLE, ibus_text_new_from_string(_("label_pinyin")),
-      ICON("ibus-fun.png"), ibus_text_new_from_string("tooltip_pinyin"), true,
-      true, m_options->pinyin ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-      nullptr);
-  ibus_property_set_symbol(prop_pinyin, ibus_text_new_from_string("ax"));
-  auto prop_preference = ibus_property_new(
-      "preference", PROP_TYPE_NORMAL,
-      ibus_text_new_from_string(_("preference")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string("preference_tool_tip"), true, true,
-      PROP_STATE_CHECKED, nullptr);
+    auto prop_list = ibus_prop_list_new();
+    auto prop_input_mode = NewProperty("InputMode", PROP_TYPE_NORMAL, true);
 
-  auto wubi_prop_sub_list = ibus_prop_list_new();
-  auto prop_wubi_table_no = ibus_property_new(
-      "wubi_table_no", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_wubi_table_no")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string("tooltip_wubi_table_no"), true, true,
-      m_options->wubi_table.empty() ? PROP_STATE_CHECKED : PROP_STATE_UNCHECKED,
-      nullptr);
-  auto prop_wubi_table_86 = ibus_property_new(
-      "wubi_table_86", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_wubi_table_86")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string("tooltip_wubi_table_86"), true, true,
-      m_options->wubi_table == wubi86DictPath ? PROP_STATE_CHECKED
-                                              : PROP_STATE_UNCHECKED,
-      nullptr);
-  auto prop_wubi_table_98 = ibus_property_new(
-      "wubi_table_98", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_wubi_table_98")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string("tooltip_wubi_table_98"), true, true,
-      m_options->wubi_table == wubi98DictPath ? PROP_STATE_CHECKED
-                                              : PROP_STATE_UNCHECKED,
-      nullptr);
-  ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_no);
-  ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_86);
-  ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_98);
+    auto prop_pinyin = NewProperty("pinyin", PROP_TYPE_TOGGLE, m_options->pinyin);
+    ibus_property_set_symbol(prop_pinyin, ibus_text_new_from_string("ax"));
 
-  auto prop_wubi = ibus_property_new(
-      "wubi", PROP_TYPE_MENU, ibus_text_new_from_string(_("wubi")),
-      ICON("ibus-fun.png"), ibus_text_new_from_string("wubi"), true, true,
-      PROP_STATE_CHECKED, wubi_prop_sub_list);
+    auto prop_preference = NewProperty("preference", PROP_TYPE_NORMAL, true);
 
-  auto orientation_list = ibus_prop_list_new();
-  auto system = ibus_property_new(
-      "orientation_system", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_orientation_system")),
-      ICON("ibus-fun.png"),
-      ibus_text_new_from_string(_("tooltip_orientation_system")), true, true,
-      m_options->lookupTableOrientation == IBUS_ORIENTATION_SYSTEM
-          ? PROP_STATE_CHECKED
-          : PROP_STATE_UNCHECKED,
-      nullptr);
-  auto horizontal = ibus_property_new(
-      "orientation_horizontal", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_orientation_horizontal")),
-      ICON("ibus-fun.png"),
-      ibus_text_new_from_string(_("tooltip_orientation_horizontal")), true,
-      true,
-      m_options->lookupTableOrientation == IBUS_ORIENTATION_HORIZONTAL
-          ? PROP_STATE_CHECKED
-          : PROP_STATE_UNCHECKED,
-      nullptr);
-  auto vertical = ibus_property_new(
-      "orientation_vertical", PROP_TYPE_RADIO,
-      ibus_text_new_from_string(_("label_orientation_vertical")),
-      ICON("ibus-fun.png"),
-      ibus_text_new_from_string(_("tooltip_orientation_vertical")), true, true,
-      m_options->lookupTableOrientation == IBUS_ORIENTATION_VERTICAL
-          ? PROP_STATE_CHECKED
-          : PROP_STATE_UNCHECKED,
-      nullptr);
-  ibus_prop_list_append(orientation_list, system);
-  ibus_prop_list_append(orientation_list, horizontal);
-  ibus_prop_list_append(orientation_list, vertical);
-  auto prop_orientation = ibus_property_new(
-      "orientation", PROP_TYPE_MENU,
-      ibus_text_new_from_string(_("label_orientation")), ICON("ibus-fun.png"),
-      ibus_text_new_from_string(_("tooltip_orientation")), true, true,
-      m_options->lookupTableOrientation == IBUS_ORIENTATION_VERTICAL
-          ? PROP_STATE_CHECKED
-          : PROP_STATE_UNCHECKED,
-      orientation_list);
+    auto wubi_prop_sub_list = ibus_prop_list_new();
+    auto prop_wubi_table_no = NewProperty("wubi_table_no", PROP_TYPE_RADIO, m_options->wubi_table.empty());
+    auto prop_wubi_table_86 = NewProperty("wubi_table_86", PROP_TYPE_RADIO, m_options->wubi_table == wubi86DictPath);
+    auto prop_wubi_table_98 = NewProperty("wubi_table_98", PROP_TYPE_RADIO, m_options->wubi_table == wubi98DictPath);
+    ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_no);
+    ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_86);
+    ibus_prop_list_append(wubi_prop_sub_list, prop_wubi_table_98);
 
-  g_object_ref_sink(prop_list);
-  ibus_prop_list_append(prop_list, prop_input_mode);
-  ibus_prop_list_append(prop_list, prop_wubi);
-  ibus_prop_list_append(prop_list, prop_pinyin);
-  ibus_prop_list_append(prop_list, prop_orientation);
-  ibus_prop_list_append(prop_list, prop_preference);
-  m_props = prop_list;
-#undef ICON
+    auto prop_wubi = NewProperty("wubi", PROP_TYPE_MENU, true, wubi_prop_sub_list);
+
+    auto orientation_list = ibus_prop_list_new();
+    auto system = NewProperty("system", PROP_TYPE_RADIO, m_options->lookupTableOrientation == IBUS_ORIENTATION_SYSTEM);
+    auto horizontal =
+        NewProperty("horizontal", PROP_TYPE_RADIO, m_options->lookupTableOrientation == IBUS_ORIENTATION_HORIZONTAL);
+    auto vertical =
+        NewProperty("vertical", PROP_TYPE_RADIO, m_options->lookupTableOrientation == IBUS_ORIENTATION_VERTICAL);
+    ibus_prop_list_append(orientation_list, system);
+    ibus_prop_list_append(orientation_list, horizontal);
+    ibus_prop_list_append(orientation_list, vertical);
+    auto prop_orientation = NewProperty("orientation", PROP_TYPE_MENU, true, orientation_list);
+
+    auto prop_fast_input_enable = NewProperty("fast_input_enabled", PROP_TYPE_TOGGLE, m_options->dictFastEnabled);
+
+    g_object_ref_sink(prop_list);
+    ibus_prop_list_append(prop_list, prop_input_mode);
+    ibus_prop_list_append(prop_list, prop_wubi);
+    ibus_prop_list_append(prop_list, prop_pinyin);
+    ibus_prop_list_append(prop_list, prop_orientation);
+    ibus_prop_list_append(prop_list, prop_fast_input_enable);
+    ibus_prop_list_append(prop_list, prop_preference);
+    m_props = prop_list;
 }
 
 // static
@@ -574,8 +519,13 @@ void Engine::OnPropertyActivate(IBusEngine *engine, const gchar *name,
     }
   }
 
-  if(n == "dict_fast_enbale") {
-      m_options->dictFastEnabled = state == 1 ? true:false;
+  if(n == "fast_input_enabled") {
+      FUN_INFO("fast_input_enbaled %d", state);
+      m_options->dictFastEnabled = state == 1;
+      Config::getInstance()->SetString(
+          CONF_NAME_FAST_INPUT_ENABLED,
+          state == 1? "true": "false"
+          );
       ReloadFastTable();
   }
 
@@ -630,8 +580,8 @@ std::string Engine::IBusMakeIndicatorMsg(long recordingTime) {
 void Engine::candidateSelected(guint index, bool ignoreText) {
   auto cand = m_lookupTable->GetCandidateGlobal(index);
 
-  if (cand.isPinyin && m_wubi) {
-    std::string code = m_wubi->CodeSearch(cand.text->text);
+  if (cand.isPinyin && s_wubi) {
+    std::string code = s_wubi->CodeSearch(cand.text->text);
     if (code.empty()) {
       ibus_engine_hide_auxiliary_text(m_engine);
     } else {
@@ -653,6 +603,11 @@ void Engine::candidateSelected(guint index, bool ignoreText) {
   m_lookupTable->Hide();
   ibus_engine_hide_preedit_text(m_engine);
   m_input.clear();
+}
+
+void Engine::Reset() {
+    ReloadFastTable();
+//    SwitchWubi();
 }
 LookupTable::LookupTable(IBusEngine *engine, IBusOrientation orientation) {
   m_engine = engine;

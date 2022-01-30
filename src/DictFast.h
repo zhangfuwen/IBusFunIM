@@ -4,7 +4,6 @@
 
 #ifndef IBUS_FUN_DICTFAST_H
 #define IBUS_FUN_DICTFAST_H
-
 #include <configor/json.hpp>
 #include <filesystem>
 #include <fstream>

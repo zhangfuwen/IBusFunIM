@@ -79,10 +79,10 @@ private:
     const std::string wubi98DictPath = "/usr/share/ibus-table/data/wubi98.txt";
 
     IBusEngine *m_engine = nullptr;
-    Wubi *m_wubi = nullptr;
-    pinyin::DictPinyin *m_pinyin = nullptr;
+    static Wubi *s_wubi;
+    static pinyin::DictPinyin *s_pinyin;
     DictSpeech *m_speechRecognizer = nullptr;
-    DictFast * m_dictFast = nullptr;
+    static DictFast * s_dictFast;
     std::string m_input;
 
     LookupTable *m_lookupTable = nullptr;
@@ -120,7 +120,7 @@ public:
     void PageDown() { m_lookupTable->PageDown();}
     void CursorUp() { m_lookupTable->CursorUp();}
     void CursorDown() { m_lookupTable->CursorDown();}
-    void Reset() { FUN_TRACE(""); }
+    void Reset();
     void IBusUpdateIndicator(long recordingTime) override;
     void OnPropertyActivate(IBusEngine *engine, const gchar *name, guint state);
     gboolean ProcessKeyEvent(guint keyval, guint keycode, guint state);

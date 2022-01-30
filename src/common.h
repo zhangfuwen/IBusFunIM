@@ -25,6 +25,8 @@ struct CandidateAttr {
 #define CONF_NAME_PINYIN "pinyin_enable"
 #define CONF_NAME_SPEECH "speech_enable"
 #define CONF_NAME_ORIENTATION "orientation"
+#define CONF_NAME_FAST_INPUT_ENABLED "fast_input_enabled"
+#define CONF_NAME_FAST_INPUT_RELOAD "fast_input_reload"
 
 #define GETTEXT_PACKAGE "messages"
 

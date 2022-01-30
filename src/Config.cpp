@@ -49,6 +49,8 @@ void Config::OnValueChanged(IBusConfig *config, gchar *section, gchar *name, GVa
         self->m_opts->speechAkId = nameVal;
     } else if (std::string(name) == CONF_NAME_SECRET) {
         self->m_opts->speechSecret = nameVal;
+    } else if(std::string(name) == CONF_NAME_FAST_INPUT_RELOAD) {
+        self->m_opts->dictFastPendingReload = true;
     }
     FUN_TRACE("Exit");
 }
