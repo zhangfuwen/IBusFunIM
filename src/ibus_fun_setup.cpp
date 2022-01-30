@@ -22,7 +22,7 @@
 
 Glib::RefPtr<Gtk::Application> app;
 Glib::RefPtr<Gtk::Builder> builder;
-Gtk::Window *win;
+Gtk::ApplicationWindow *win;
 
 int grid_get_num_rows(Gtk::Grid *grid) {
     for (int i = 0; i < 1000; i++) {
@@ -103,17 +103,24 @@ void grid_add_row(Gtk::Grid *grid, int row_index, std::string key, std::string c
     auto entry1 = Gtk::manage(new Gtk::Entry());
     entry1->set_editable();
     entry1->set_text(key.c_str());
+    entry1->set_halign(Gtk::Align::ALIGN_CENTER);
+    entry1->set_valign(Gtk::Align::ALIGN_START);
     grid->attach(*entry1, 0, row_index, 1, 1);
     entry1->show();
+
     auto entry2 = Gtk::manage(new Gtk::Entry());
     entry2->set_editable();
     entry2->set_text(cmd.c_str());
+    entry2->set_halign(Gtk::Align::ALIGN_CENTER);
+    entry2->set_valign(Gtk::Align::ALIGN_START);
     grid->attach(*entry2, 1, row_index, 1, 1);
     entry2->show();
 
     auto button = Gtk::manage(new Gtk::Button(_("checkResult")));
     grid->attach(*button, 2, row_index, 1, 1);
     const Gtk::Entry *cmd_entry = entry2;
+    button->set_halign(Gtk::Align::ALIGN_CENTER);
+    button->set_valign(Gtk::Align::ALIGN_START);
     button->signal_clicked().connect([=]() {
         FUN_INFO("%s", cmd_entry->get_text().c_str());
         auto text = cmd_entry->get_text();
@@ -130,6 +137,8 @@ void grid_add_row(Gtk::Grid *grid, int row_index, std::string key, std::string c
     auto delete_button = Gtk::manage(new Gtk::Button(_("delete")));
     grid->attach(*delete_button, 3, row_index);
     const int i = row_index;
+    delete_button->set_halign(Gtk::Align::ALIGN_CENTER);
+    delete_button->set_valign(Gtk::Align::ALIGN_START);
     delete_button->signal_clicked().connect(
         [entry1, entry2, button, delete_button, grid]() {
             grid->remove(*entry1);
@@ -324,7 +333,7 @@ int main(int argc, char *argv[]) {
     app = Gtk::Application::create("fun.xjbcode.ibus-fun.setup");
     builder = Gtk::Builder::create_from_file("/usr/share/ibus/ibus-fun/data/ibus_fun_setup.glade");
 
-    builder->get_widget<Gtk::Window>("win1", win);
+    builder->get_widget<Gtk::ApplicationWindow>("win1", win);
     Gtk::Button *but1;
     builder->get_widget<Gtk::Button>("but1", but1);
     Gtk::Label *page1;
@@ -339,6 +348,14 @@ int main(int argc, char *argv[]) {
     builder->get_widget<Gtk::Label>("page2", page2);
 
     setup_fast_input_handlers(builder);
+
+    Gtk::HeaderBar * headerbar ;
+    auto builder2 = Gtk::Builder::create_from_file("/usr/share/ibus/ibus-fun/data/headerbar.glade");
+    builder2->get_widget<Gtk::HeaderBar>("headerbar", headerbar);
+//    headerbar = new Gtk::HeaderBar();
+    win->set_titlebar(*headerbar);
+    win->show_all();
+    win->show_all_children();
 
     IBusBus *g_bus;
     IBusConfig *config;
