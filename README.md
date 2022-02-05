@@ -64,6 +64,9 @@ sudo dpkg -i audio_ime-1.1-Linux.deb
 
 ![五笔配置界面](./doc/2_config_wubi.png)
 
+## 快速输入配置界面
+
+![快速输入配置](./doc/6_fast_input.png)
 
 
 
