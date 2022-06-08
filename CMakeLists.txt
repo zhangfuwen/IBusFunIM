@@ -116,6 +116,7 @@ target_link_libraries(ibus-fun
         alibabacloud-idst-speech.a
         pthread z dl psl brotlidec pulse pulse-simple
         ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
+        idn2
         pinyin)
 set_property(TARGET ibus-fun PROPERTY CXX_STANDARD 20)
 add_dependencies(ibus-fun nlsCppSdk)
