@@ -31,7 +31,7 @@ cd build
 cmake ..
 make
 cpack
-sudo dpkg -i audio_ime-1.1-Linux.deb
+sudo dpkg -i ./ibus-fun-1.1-Linux.deb
 
 ```
 

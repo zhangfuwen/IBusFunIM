@@ -90,12 +90,12 @@ static inline void printBacktrace() {
     time_t now = time(nullptr);
     strftime(buff, 40, "%Y-%m-%d %H:%M:%S", localtime(&now));
 
-    syslog(LOG_DAEMON | LOG_ERR, "crash: %s\n", buff);
+    FUN_ERROR("crash: %s\n", buff);
     void *stackBuffer[64];
     int numAddresses = backtrace((void**) &stackBuffer, 64);
     char **addresses = backtrace_symbols(stackBuffer, numAddresses);
     for( int i = 0 ; i < numAddresses ; ++i ) {
-        syslog(LOG_DAEMON | LOG_ERR, "[%2d]: %s\n", i, addresses[i]);
+        FUN_ERROR("[%2d]: %s\n", i, addresses[i]);
     }
     free(addresses);
 }
