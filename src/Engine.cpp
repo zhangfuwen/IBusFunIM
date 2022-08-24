@@ -597,7 +597,7 @@ std::string Engine::IBusMakeIndicatorMsg(long recordingTime) {
 void Engine::candidateSelected(guint index, bool ignoreText) {
     auto cand = m_lookupTable->GetCandidateGlobal(index);
 
-    if (cand.isPinyin && s_wubi) {
+    if (cand.isPinyin && s_wubi && cand.text) {
         std::string code = s_wubi->CodeSearch(cand.text->text);
         if (code.empty()) {
             ibus_engine_hide_auxiliary_text(m_engine);
