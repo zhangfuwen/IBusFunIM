@@ -4,10 +4,10 @@
 
 #include <functional>
 #include "Engine.h"
-#include "speechRecognizerRequest.h"
-#include "nlsToken.h"
-#include "nlsEvent.h"
-#include "nlsClient.h"
+//#include "speechRecognizerRequest.h"
+//#include "nlsToken.h"
+//#include "nlsEvent.h"
+//#include "nlsClient.h"
 #include "common_log.h"
 #include <vector>
 #include <utility>

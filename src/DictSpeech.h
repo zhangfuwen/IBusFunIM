@@ -8,9 +8,12 @@
 #include "RuntimeOptions.h"
 #include <csignal>
 #include <ibus.h>
-#include <nlsEvent.h>
+//#include <nlsEvent.h>
 #include <string>
 #include <thread>
+#include <memory>
+#include "Whisper.h"
+#include "AudioRecorder.h"
 
 #define BUFSIZE 1024
 #define SAMPLE_RATE 16000
@@ -32,11 +35,24 @@ public:
         : m_speechListerner(listener), m_opts(opts) {}
     void Start() {
         m_recording = true;
-        auto ret = RecognitionPrepareAndStartRecording();
-        if (ret < 0) {
-            m_recording = false;
-            m_speechListerner->OnFailed();
-        }
+
+        m_recorder_buffer.clear();
+        m_recorder = std::make_unique<AudioRecorder>("default", 44100, 2, 1024);
+        m_recorder->setOnFrame([this](float *data, int len) {
+            m_recorder_buffer.resize(m_recorder_buffer.size() + len);
+            std::copy_n(data, len, m_recorder_buffer.end());
+            Whisper whisper;
+            auto ret = whisper.recognize(m_recorder_buffer.data(), m_recorder_buffer.size());
+            this->m_speechListerner->OnPartialResult(ret);
+
+            this->m_speechListerner->OnCompleted(ret);
+          });
+        m_recorder->start_recording();
+//        auto ret = RecognitionPrepareAndStartRecording();
+//        if (ret < 0) {
+//            m_recording = false;
+//            m_speechListerner->OnFailed();
+//        }
     }
     void Stop() { m_recording = false; }
 
@@ -60,9 +76,12 @@ private:
     volatile bool m_waiting = false;   // m_waiting for converted text from internet
     SpeechListener *m_speechListerner;
     int frame_size = FRAME_100MS;
-    int encoder_type = ENCODER_NONE;
+//    int encoder_type = ENCODER_NONE;
     std::string g_token;
     long g_expireTime = 0;
+
+    std::unique_ptr<AudioRecorder> m_recorder = nullptr;
+    std::vector<float> m_recorder_buffer = {};
     SpeechRecognizerOptions *m_opts = nullptr;
 
     /**
@@ -107,11 +126,11 @@ private:
     };
     int RecognitionPrepareAndStartRecording();
     int NetGenerateToken(const std::string &akId, const std::string &akSecret, std::string *token, long *expireTime);
-    void OnRecognitionStarted(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
-    void OnRecognitionResultChanged(AlibabaNls::NlsEvent *cbEvent, [[maybe_unused]] void *cbParam);
-    void OnRecognitionCompleted(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
-    void OnRecognitionTaskFailed(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
-    void OnRecognitionChannelClosed(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
-    int RecognitionRecordAndRequest(ParamStruct *tst);
+//    void OnRecognitionStarted(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
+//    void OnRecognitionResultChanged(AlibabaNls::NlsEvent *cbEvent, [[maybe_unused]] void *cbParam);
+//    void OnRecognitionCompleted(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
+//    void OnRecognitionTaskFailed(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
+//    void OnRecognitionChannelClosed(AlibabaNls::NlsEvent *cbEvent, void *cbParam);
+//    int RecognitionRecordAndRequest(ParamStruct *tst);
 };
 #endif // AUDIO_IME_DICTSPEECH_H

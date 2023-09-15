@@ -37,9 +37,11 @@ MESSAGE("PROFECT_SOURCE_DIR " ${PROJECT_SOURCE_DIR})
 MESSAGE("CMAKE_SOURCE_DIR " ${CMAKE_SOURCE_DIR})
 MESSAGE("CMAKE_BUILD_TYPE " ${CMAKE_BUILD_TYPE})
 
-include_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/include)
-link_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/lib)
+add_subdirectory(thirdparty/whisper.cpp)
 
+#include_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/include)
+#link_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/lib)
+#
 
 add_executable(pulse_record examples/pulse_record.cpp)
 target_link_libraries(pulse_record pulse pulse-simple)
@@ -58,6 +60,8 @@ message("CMAKE_INSTALL_FULL_DATAROOTDIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}")
 message("CMAKE_INSTALL_FULL_SHAREDSTATEDIR ${CMAKE_INSTALL_FULL_SHAREDSTATEDIR}")
 message("CMAKE_INSTALL_FULL_LIBEXECDIR ${CMAKE_INSTALL_FULL_LIBEXECDIR}")
 message("CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR}")
+
+find_package(ALSA REQUIRED)
 
 find_package(PkgConfig)
 pkg_check_modules(IBus REQUIRED ibus-1.0)
@@ -111,15 +115,20 @@ add_executable(ibus-fun
         src/DictSpeech.cpp
         src/DictFast.cpp
         src/ibus_fun_main.cpp
-        )
+        src/Whisper.h
+        src/Whisper.cpp
+        src/AudioRecorder.h
+        src/AudioRecorder.cpp
+)
 target_link_libraries(ibus-fun
-        alibabacloud-idst-speech.a
+        whisper
+        ${ALSA_LIBRARIES}
         pthread z dl psl brotlidec pulse pulse-simple
         ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
         idn2
         pinyin)
 set_property(TARGET ibus-fun PROPERTY CXX_STANDARD 20)
-add_dependencies(ibus-fun nlsCppSdk)
+#add_dependencies(ibus-fun nlsCppSdk)
 add_dependencies(ibus-fun configor)
 target_include_directories(ibus-fun PRIVATE ${GTKMM3_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/configor/src/include)
 
@@ -165,6 +174,7 @@ INSTALL(FILES res/headerbar.glade DESTINATION /usr/share/ibus/ibus-fun/data PERM
 INSTALL(FILES res/dict_pinyin.dat DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
 INSTALL(FILES res/wubi86.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
 INSTALL(FILES res/wubi98.txt DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
+INSTALL(FILES data/ggml-medium.bin DESTINATION /usr/share/ibus-table/data PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
 INSTALL(FILES res/ibus-fun.png DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/ibus-fun/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(FILES res/ibus-fun.conf DESTINATION /etc/rsyslog.d/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ WORLD_EXECUTE)
 INSTALL(FILES language/zh_CN/LC_MESSAGES/messages.mo DESTINATION /usr/share/ibus/ibus-fun/data/language/zh_CN/LC_MESSAGES/ PERMISSIONS OWNER_READ OWNER_WRITE WORLD_READ)
