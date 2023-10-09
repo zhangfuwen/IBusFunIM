@@ -12,7 +12,7 @@
 #include <string>
 #include <thread>
 #include <memory>
-#include "Whisper.h"
+//#include "Whisper.h"
 #include "AudioRecorder.h"
 
 #define BUFSIZE 1024
@@ -36,18 +36,18 @@ public:
     void Start() {
         m_recording = true;
 
-        m_recorder_buffer.clear();
-        m_recorder = std::make_unique<AudioRecorder>("default", 44100, 2, 1024);
-        m_recorder->setOnFrame([this](float *data, int len) {
-            m_recorder_buffer.resize(m_recorder_buffer.size() + len);
-            std::copy_n(data, len, m_recorder_buffer.end());
-            Whisper whisper;
-            auto ret = whisper.recognize(m_recorder_buffer.data(), m_recorder_buffer.size());
-            this->m_speechListerner->OnPartialResult(ret);
-
-            this->m_speechListerner->OnCompleted(ret);
-          });
-        m_recorder->start_recording();
+//        m_recorder_buffer.clear();
+//        m_recorder = std::make_unique<AudioRecorder>("default", 44100, 2, 1024);
+//        m_recorder->setOnFrame([this](float *data, int len) {
+//            m_recorder_buffer.resize(m_recorder_buffer.size() + len);
+//            std::copy_n(data, len, m_recorder_buffer.end());
+//            Whisper whisper;
+//            auto ret = whisper.recognize(m_recorder_buffer.data(), m_recorder_buffer.size());
+//            this->m_speechListerner->OnPartialResult(ret);
+//
+//            this->m_speechListerner->OnCompleted(ret);
+//          });
+//        m_recorder->start_recording();
 //        auto ret = RecognitionPrepareAndStartRecording();
 //        if (ret < 0) {
 //            m_recording = false;

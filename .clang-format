@@ -1,0 +1,12 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+
+# private, public
+AccessModifierOffset: -4
+
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: AlwaysBreak
+IndentCaseLabels: true
+AllowAllParametersOfDeclarationOnNextLine: false

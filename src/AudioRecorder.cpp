@@ -21,11 +21,13 @@ void AudioRecorder::start_recording() {
         std::cerr << "Audio device is not available." << std::endl;
         return;
     }
+    printf("handle:%d\n", handle);
+    printf("frames %d\n", frames);
 
     float buffer[frames];
     int err;
     while (true) {
-        if ((err = snd_pcm_readi(handle, buffer, frames)) != (int)frames) {
+        if ((err = snd_pcm_readi(handle, buffer, frames/2)) != (int)frames/2) {
             std::cerr << "Read error: " << snd_strerror(err) << std::endl;
         }
         if (on_frame) {

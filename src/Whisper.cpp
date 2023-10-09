@@ -4,9 +4,10 @@
 
 #include "Whisper.h"
 std::string Whisper::recognize(float *buf, int len) {
-    auto ctx = whisper_init_from_file("/usr/share/ibus-table/data/ggml-medium.bin");
 
+    whisper_init_state(ctx);
     auto wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    wparams.debug_mode = true;
     if (whisper_full(ctx, wparams, buf, len) != 0) {
         fprintf(stderr, "failed to process audio\n");
         return "7";

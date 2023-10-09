@@ -16,7 +16,7 @@ ExternalProject_Add(nlsCppSdk
         BUILD_COMMAND "${CMAKE_BINARY_DIR}/nlsCppSdk/src/scripts/build_linux.sh"
         INSTALL_COMMAND ""
         TEST_COMMAND ""
-        )
+)
 
 ExternalProject_Add(configor
         GIT_REPOSITORY "https://github.com/Nomango/configor"
@@ -27,7 +27,7 @@ ExternalProject_Add(configor
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
         TEST_COMMAND ""
-        )
+)
 
 
 MESSAGE("c flag is ${CMAKE_C_FLAGS}")
@@ -37,7 +37,7 @@ MESSAGE("PROFECT_SOURCE_DIR " ${PROJECT_SOURCE_DIR})
 MESSAGE("CMAKE_SOURCE_DIR " ${CMAKE_SOURCE_DIR})
 MESSAGE("CMAKE_BUILD_TYPE " ${CMAKE_BUILD_TYPE})
 
-add_subdirectory(thirdparty/whisper.cpp)
+#add_subdirectory(thirdparty/whisper.cpp)
 
 #include_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/include)
 #link_directories(${CMAKE_BINARY_DIR}/nlsCppSdk/src/build/install/NlsSdk3.X_LINUX/lib)
@@ -99,7 +99,11 @@ add_library(pinyin STATIC
         pinyin/userdict.cpp
         pinyin/utf16char.cpp
         pinyin/utf16reader.cpp
-        )
+)
+
+#add_executable(whisper_test examples/whisper_test.cpp src/Whisper.cpp src/AudioRecorder.h src/AudioRecorder.cpp)
+#target_include_directories(whisper_test PRIVATE src)
+#target_link_libraries(whisper_test ${ALSA_LIBRARIES} pthread z dl psl brotlidec whisper)
 
 add_executable(wubitest examples/wubitest.cpp)
 add_executable(pinyintest examples/pinyintest.cpp)
@@ -112,17 +116,17 @@ add_executable(ibus-fun
         src/ibus_fun_engine.cpp
         src/DictPinyin.cpp
         src/DictWubi.cpp
-        src/DictSpeech.cpp
+#        src/DictSpeech.cpp
         src/DictFast.cpp
         src/ibus_fun_main.cpp
-        src/Whisper.h
-        src/Whisper.cpp
-        src/AudioRecorder.h
-        src/AudioRecorder.cpp
+#        src/Whisper.h
+#        src/Whisper.cpp
+#        src/AudioRecorder.h
+#        src/AudioRecorder.cpp
 )
 target_link_libraries(ibus-fun
-        whisper
-        ${ALSA_LIBRARIES}
+#        whisper
+#        ${ALSA_LIBRARIES}
         pthread z dl psl brotlidec pulse pulse-simple
         ${IBus_LIBRARIES} ${GLib2_LIBRARIES}
         idn2
@@ -154,7 +158,7 @@ target_link_libraries(fun-setup
         ${GTKMM3_LIBRARIES}
         ${IBus_LIBRARIES}
         ${GLib2_LIBRARIES}
-        )
+)
 
 configure_file(res/ibus-fun.xml.in ${CMAKE_CURRENT_BINARY_DIR}/ibus-fun.xml @ONLY)
 

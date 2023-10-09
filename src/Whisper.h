@@ -10,7 +10,12 @@
 
 class Whisper {
 public:
+    Whisper() {
+        ctx = whisper_init_from_file("/usr/share/ibus-table/data/ggml-medium.bin");
+    }
+public:
     std::string recognize(float *buf, int len);
+    whisper_context *ctx = nullptr;
 };
 
 #endif // IBUS_FUN_WHISPER_H
